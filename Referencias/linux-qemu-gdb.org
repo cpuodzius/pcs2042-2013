@@ -1,0 +1,187 @@
+* Introducao
+
+Explicar como o kernel do linux pode ser rodado no qemu e debugado pelo gdb.
+
+O qemu é uma máquina virtual que emula microprocessadores e placas intel mas também ARM. A placa que estamos interessados é a Versatile. O gdb - gnu debuger - comunica-se com a placa Versatile emulada pelo qemu e permite que debugemos instrucoes passo a passo.
+
+O ambiente linux-qemu-gdb foi baseado em:
+
+http://balau82.wordpress.com/2010/03/22/compiling-linux-kernel-for-qemu-arm-emulator/
+
+Esse documento é um post do blog Balau. Basicamente ele trata de criar uma imagem em ramdisk contendo apenas um processo que é disparado pela placa Versatile. 
+
+* Softwares necessários:
+
+** toolchain
+Para que programas sejam desenvolvidos e rodados na placa Versatile (uma placa rodando ARM) são necessárias várias ferramentas como um cross compilador (um compilador que roda no pentium e gera código para o ARM), um cross assembler, um linker, etc. Essas ferramentas são reunidas em um arquivo chamado toolchain. Existem diversos toolchains para o ARM. O post do Balau usa o toolchain:
+
+arm-none-eabi
+
+Eu fiz testes usando:
+arm-2011.03-42-arm-none-eabi.bin
+
+Provavelmente vc. encontrará outras versões mais recentes em:
+https://sourcery.mentor.com
+
+mais especificamente em:
+https://sourcery.mentor.com/sgpp/lite/arm/portal/release1802 : pagina que contém pacotes para o linux ou windows. 
+
+No caso do linux:
+https://sourcery.mentor.com/sgpp/lite/arm/portal/package8734/public/arm-none-eabi/arm-2011.03-42-arm-none-eabi-i686-pc-linux-gnu.tar.bz2
+
+O gdb que vamos utilizar este nesse toolchain e corresponde a:
+arm-none-eabi-gdb
+
+** qemu
+Utilizamos: 
+qemu-system-arm
+
+Para instalar no ubuntu basta instalar o pacote qemu-system.
+
+** kernel do linux
+É necessário fazer o download do fonte do kernel do linux e compilar de acordo com o post do Balau. Ou seja:
+1. download do kernel a paritr de http://www.kernel.org/ gravando em, por exemplo em ~/Downloads, gerando 
+
+2. descompactar
+ 
+3. configuar o kernel em ~/Downloads/linux.../ usando:
+~/Downloads/linux-2.6.39$ make ARCH=arm menuconfig
+
+TEM QUE HABILITAR EABI: No menuconfig:
+make ARCH=arm menuconfig ==> Kernel Features ==> Use the ARM EABI to compile the kernel (NEW) 
+nao habilite deteccao de memomory leak (que estava previamente desabilitado).
+Tem que entrar no menu e habilitar o debuging. Location:                                                                                         
+       -> Kernel hacking
+         -> Kernel Debugging
+         -> Compile the kernel with debug info (isso nao estava habilitado, pode ser daih que nao parava em do_fork).
+
+4. Esse passo não está no post do Balau. O kernel deve ser compilado sem otimizacao para que possamos visualizar as variaveis no gdb. Para isso, reedite o Makefile colocando o nível de otimizacao para zero (provavelmente estah em 2). Ou seja troque O2 por O0; por exemplo:
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O0 -fomit-frame-pointer
+HOSTCXXFLAGS = -O0
+Não troque Os por O0 porque nao deve funcionar.
+
+5. criar o kernel para o ARM usando:
+~/Downloads/linux-2.6.39$ make ARCH=arm CROSS_COMPILE=arm-none-eabi- all
+
+** qemu + gdb
+Nesse post específico do Balau nada é dito sobre o debug; porém para rodar a máquina virtual esperando uma conexão com o gdb pode-se fazer em 
+
+cd arch/arm/boot/ 
+qemu-system-arm -M versatilepb -m 128M -kernel zImage -initrd rootfs -append "root=/dev/ram rdinit=/test" -s -S
+
+Observe que o arquivo rootfs foi criado de acordo com o post do Balau. Dentro de rootfs foi copiada a imagem do executável test (um programa criado pelo cross compiler).
+
+O arquivo zImage se refer à imagem do Linux e se encontra em arch/arm/boot
+
+O debuger deve ser ativado em:
+~/Downloads/linux-2.6.39$ arm-none-linux-gnueabi-gdb vmlinux
+
+pois é nesse diretório onde se encontra vmlinux. 
+O arquivo vmlinux contém a tabela de símbolos a ser usada pelo debuger. Por exemplo, a funcao "do_fork" que implementa a system call fork está em um certo endereco referenciado por vmlinux.
+
+*** comandos interessantes para o gdb:
+(gdb) target remote:1234
+Remote debugging using :1234
+0x00000000 in ?? ()
+(gdb) b do_fork
+Note: breakpoints 1 and 2 also set at pc 0xc003be84.
+Breakpoint 3 at 0xc003be84: file kernel/fork.c, line 1418.
+(gdb) c
+Continuing.
+
+Breakpoint 1, do_fork (clone_flags=8391424, stack_start=0, regs=0xc0201f78, stack_size=0, parent_tidptr=0x0, child_tidptr=0x0) at kernel/fork.c:1418
+1418		if (clone_flags & CLONE_NEWUSER) {
+(gdb) n
+1409	{
+(gdb) 
+1418		if (clone_flags & CLONE_NEWUSER) {
+(gdb) 
+1432		if (likely(user_mode(regs)))
+(gdb) 
+1411		int trace = 0;
+(gdb) 
+1432		if (likely(user_mode(regs)))
+(gdb) 
+1435		p = copy_process(clone_flags, stack_start, regs, stack_size,
+(gdb) 
+1441		if (!IS_ERR(p)) {
+(gdb) 
+1435		p = copy_process(clone_flags, stack_start, regs, stack_size,
+(gdb) 
+1479			nr = PTR_ERR(p);
+(gdb) x p
+0xc788ad60:	0x00000000
+(gdb) print p
+$1 = (struct task_struct *) 0xc788ad60
+
+(gdb) print p->
+Display all 108 possibilities? (y or n)
+active_mm                    fpu_counter                  nsproxy                      ptraced                      sighand
+alloc_lock                   fs                           nvcsw                        rcu                          signal
+audit_context                fs_excl                      parent                       real_blocked                 splice_pipe
+backing_dev_info             group_leader                 parent_exec_id               real_cred                    stack
+bio_list                     gtime                        pdeath_signal                real_parent                  start_time
+blocked                      in_execve                    pending                      real_start_time              state
+brk_randomized               in_iowait                    personality                  reclaim_state                static_prio
+children                     io_context                   pi_blocked_on                replacement_session_keyring  stime
+clear_child_tid              ioac                         pi_lock                      robust_list                  stimescaled
+comm                         irqaction                    pi_state_cache               rt                           sysvsem
+cpu_timers                   journal_info                 pi_state_list                rt_priority                  tasks
+cpus_allowed                 last_siginfo                 pi_waiters                   sas_ss_size                  tgid
+cputime_expires              link_count                   pid                          sas_ss_sp                    thread
+cred                         lock_depth                   pids                         saved_sigmask                thread_group
+default_timer_slack_ns       maj_flt                      plug                         sched_class                  timer_slack_ns
+did_exec                     min_flt                      policy                       sched_reset_on_fork          total_link_count
+dirties                      mm                           prev_stime                   scm_work_list                usage
+exit_code                    nivcsw                       prev_utime                   se                           utime
+exit_signal                  normal_prio                  prio                         seccomp                      utimescaled
+exit_state                   notifier                     ptrace                       self_exec_id                 vfork_done
+files                        notifier_data                ptrace_entry                 set_child_tid                
+flags                        notifier_mask                ptrace_message               sibling                      
+(gdb) print p->cpu_timers
+$2 = {{next = 0xc788aee0, prev = 0xc788aee0}, {next = 0xc788aee8, prev = 0xc788aee8}, {next = 0xc788aef0, prev = 0xc788aef0}}
+(gdb) 
+
+1483	
+(gdb) p regs
+$4 = <value optimized out>
+(gdb) x regs
+value has been optimized out
+(gdb) 
+
+
+b do_fork # para ao tratar o fork
+bt # para ver a pilha - que funcoes chamam que funcoes.
+c # continuar
+print runqueues # ver o conteudo da variavel runqueues - as filas para o scheduler.
+help # comandos que o gdb aceita.
+x variavel # ver o conteudo da variavel
+
+* Exercícios
+
+1) Apenas siga o post em:
+
+http://balau82.wordpress.com/2010/03/22/compiling-linux-kernel-for-qemu-arm-emulator/
+
+e observe a mensagem de /test logo após o boot.
+
+2) altere test.c para que ele fique em um loop eterno imprimindo mensagens na tela.
+
+3) Crie test1.c: um outro programa que fique em um loop imprimindo mensagens na tela. 
+linux-2.6.39/arch/arm/boot$ arm-none-linux-gnueabi-gcc -static    test1.c   -o bootjk/test1
+linux-2.6.39/arch/arm/boot$ arm-none-linux-gnueabi-gcc -static  -g  teste.c   -o bootjk/test
+
+Compile e coloque em rootfs /test e /test1.
+
+Dica:
+-----------------------------------------
+mkdir bootjk                                                                                                        
+cp test bootjk/                                                                                                     
+cp test1 bootjk/                                                                                                    
+cd bootjk                        
+find . -depth -print | cpio -o --format=newc > ../rootfs                                                                                   
+-----------------------------------------
+
+4) Ative a máquina virtual de forma a disparar test1 ao invés de test.
+
+5) Coloque breakpoints, rode passo a passo, variaveis. Sugestao: acompanhe com um livro sobre o kernel do linux.
