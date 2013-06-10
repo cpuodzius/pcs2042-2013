@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 
 int main() {
 	pid_t process;
@@ -20,7 +21,7 @@ int main() {
 	}
 	else {
 		while(1)
-			printf("sou processo 1");
+			write(STDOUT_FILENO, "sou processo 1", strlen("sou processo 1"));
 	}
 	return 0;
 }
