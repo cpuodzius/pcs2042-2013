@@ -22,6 +22,7 @@
 
 #include <linux/latencytop.h>
 #include <linux/sched.h>
+#include <../fs/sysfs/sysfs.h>
 
 /*
  * Targeted preemption latency for CPU-bound tasks:
@@ -1793,6 +1794,8 @@ preempt:
 		set_last_buddy(se);
 }
 
+extern unsigned char sched_write;
+
 static struct task_struct *pick_next_task_fair(struct rq *rq)
 {
 	struct task_struct *p;
@@ -1802,11 +1805,21 @@ static struct task_struct *pick_next_task_fair(struct rq *rq)
 	if (!cfs_rq->nr_running)
 		return NULL;
 
-	do {
-		se = pick_next_entity(cfs_rq);
-		set_next_entity(cfs_rq, se);
-		cfs_rq = group_cfs_rq(se);
-	} while (cfs_rq);
+	if(sched_write) {
+		do {
+			se = pick_next_entity(cfs_rq);
+			set_next_entity(cfs_rq, se);
+			cfs_rq = group_cfs_rq(se);
+		} while (cfs_rq && task_of(se) == get_current());
+		sched_write = 0;
+	}
+	else {
+		do {
+			se = pick_next_entity(cfs_rq);
+			set_next_entity(cfs_rq, se);
+			cfs_rq = group_cfs_rq(se);
+		} while (cfs_rq);
+	}
 
 	p = task_of(se);
 	hrtick_start_fair(rq, p);

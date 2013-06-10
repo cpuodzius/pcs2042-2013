@@ -28,6 +28,13 @@
 #include "sysfs.h"
 
 /*
+ * O escalonador deve trocar de processo na chamada da system call
+ * write, portanto o processor que chamou o write deve se deixar o
+ * escalonador ciente desta chamada, sempre que ela ocorrer.
+ */
+unsigned char sched_write;
+
+/*
  * There's one bin_buffer for each open file.
  *
  * filp->private_data points to bin_buffer and
@@ -157,6 +164,7 @@ static ssize_t write(struct file *file, const char __user *userbuf,
 			count = size - offs;
 	}
 
+	sched_write = 1;
 	temp = memdup_user(userbuf, count);
 	if (IS_ERR(temp))
 		return PTR_ERR(temp);
