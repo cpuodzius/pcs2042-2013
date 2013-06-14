@@ -21,7 +21,7 @@ int main() {
 	}
 	else {
 		while(1)
-			write(STDOUT_FILENO, "sou processo 1", strlen("sou processo 1"));
+			write(STDOUT_FILENO, "pai\n", strlen("pai\n"));
 	}
 	return 0;
 }

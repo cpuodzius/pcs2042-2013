@@ -1,1 +1,6 @@
-\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.1}{Introdu\347\343o}{}% 1
+\BOOKMARK [1][-]{section.2}{Escalonamento do Linux}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Prioridades de Processos}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Pol\355tica de Escalonamento}{section.2}% 4
+\BOOKMARK [1][-]{section.3}{Altera\347\343o do Kernel}{}% 5
+\BOOKMARK [2][-]{subsection.3.1}{Resultado Final}{section.3}% 6

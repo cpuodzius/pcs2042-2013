@@ -14,7 +14,6 @@
 %   amsthm,                  % macros for theorems, lemmas, etc.
 %   graphicx,                % needed to include graphics and images
 %}
-\usepackage{graphicx}
 \usepackage{listings}
 \usepackage{color}
 
@@ -22,14 +21,6 @@
 \newcommand{\quantum}{\emph{quantum}}
 \newcommand{\segundo}{2\ensuremath{^\circ}}
 \newcommand{\code}[1]{\lstinputlisting[basicstyle=\ttfamily\scriptsize,language=C]{codes/#1}}
-
-\newcommand{\Fig}[2]{
-\begin{figure}
-        \centering
-        \includegraphics[height=300pt, width=200pt, keepaspectratio=true]{images/#1.png}
-        \caption{#2}
-        \label{fig:#1}
-\end{figure}}
 
 \title{Escalonador Diferente}
 \subtitle{Projeto Fase 02}
@@ -84,23 +75,7 @@ No final do trecho do sched.c aqui colocado, temos que o escalonador vai escolhe
 
 Neste trecho observamos que na maioria das vezes haveremos apenas processos fair, e que nesse caso, o próximo processo é escolhido a partir da fila de processos fair (i.e. cfs\_rq). Podemos observar o que foi dito acima a partir de \emph{if (likely(rq->nri\_running == rq->cfs.nr\_running))}, onde likely é uma macro para auxiliar o compilador a dispor essa instrução na memória.
 
-Em sched\_fair.c está implementado o baixo-nível em termos do escalonador. Nesse código é tratada a manipulação do processos nas suas filas de execução, bem como todo o gerenciamento (a baixo-nível) dos processos. Em especial, procuramos como funciona a função pick\_next\_task\_fair.c, para que possamos alterar o Kernel.
-
-\code{sched_fair.c}
-
-Vemos que o próximo processo (aqui sendo encapsulado por um entity) é obtido na seguinte chamada: \emph{se = pick\_next\_entity(cfs\_rq);}. Analisando-se, finalmente, esta função, vemos que o processo mais à esquerda de um árvore rubro-negram será escolhido como o próximo processo. Para tentarmos, então, cumprir nosso objetivo, alteramos o kernel para analisar se o processo mais à esquerda é o que está rodando no momento, caso seja, o kernel tira esse processo da fila de execução, escolhe o novo processo mais à esquerda e depois reinclui o processo retirado anteriormente na fila. O diff desse código pode ser visto a seguir:
-
-\code{sched_fair_diff.c}
-
-\subsection{Resultado Final}
-
-Anteriormente à mudança tinhamos a saída da Fig. \ref{fig:sem_sched}, enquanto que após a nossa alteração do escalonador tivemos a saia da Fig. \ref{fig:com_sched}.
-
-\Fig{sem_sched}{Saída sem a alteração do Kernel}
-
-\Fig{com_sched}{Saída com a alteração do Kernel}
-
-Vemos que após a alteração a intercalação entre as impressões do pai e do filho ficaram muito mais intercaladas, no entanto ainda não está exatamente um para um, o que acreditamos ocorrer devido ao cálculo dinâmico de prioridades do Linux, que pode alterar de maneira não desejada a prioridade dos processos pai ou filho, uma vez que estamos mudando manualmente a prioridade de apenas um deles, e também devido à influência de outras syscalls/interrupts que vão acabar chaveando, provavelemente, o processo que está sendo executado.
+Em sched\_fair.c está implementado o baixo-nível em termos do escalonador. Nesse código é tratada a manipulação do processos nas suas filas de execução, bem como todo o gerenciamento (a baixo-nível) dos processos. Em especial, procuramos como funciona a função picki\_next\_task\_fair.c, para que possamos alterar o Kenel,
 
 \end{document}
 

@@ -4,6 +4,6 @@
 
 int main() {
 	while(1)
-		write(STDOUT_FILENO, "filho imprimindo", strlen("filho imprimindo"));
+		write(STDOUT_FILENO, "\tfilho\n", strlen("\nfilho\n"));
 	return 0;
 }
