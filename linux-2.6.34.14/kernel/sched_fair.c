@@ -377,11 +377,22 @@ static void __dequeue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 
 static struct sched_entity *__pick_next_entity(struct cfs_rq *cfs_rq)
 {
-	struct rb_node *left = cfs_rq->rb_leftmost;
+	struct rb_node *left;
+	struct sched_entity *curr;
+
+	curr = rb_entry(cfs_rq->rb_leftmost, struct sched_entity, run_node);
+
+	if(&curr->run_node == cfs_rq->rb_leftmost) {
+		__dequeue_entity(cfs_rq, curr);
+		curr->load.weight = 0;
+		__enqueue_entity(cfs_rq, curr);
+	}
+	
+	left = cfs_rq->rb_leftmost;
 
 	if (!left)
 		return NULL;
-
+	
 	return rb_entry(left, struct sched_entity, run_node);
 }
 
@@ -1805,21 +1816,9 @@ static struct task_struct *pick_next_task_fair(struct rq *rq)
 	if (!cfs_rq->nr_running)
 		return NULL;
 
-	if(sched_write) {
-		do {
-			se = pick_next_entity(cfs_rq);
-			set_next_entity(cfs_rq, se);
-			cfs_rq = group_cfs_rq(se);
-		} while (cfs_rq && task_of(se) == get_current());
-		sched_write = 0;
-	}
-	else {
-		do {
-			se = pick_next_entity(cfs_rq);
-			set_next_entity(cfs_rq, se);
-			cfs_rq = group_cfs_rq(se);
-		} while (cfs_rq);
-	}
+	se = pick_next_entity(cfs_rq);
+	set_next_entity(cfs_rq, se);
+	cfs_rq = group_cfs_rq(se);
 
 	p = task_of(se);
 	hrtick_start_fair(rq, p);
