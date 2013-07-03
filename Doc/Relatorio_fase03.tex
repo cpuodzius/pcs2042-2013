@@ -1,0 +1,212 @@
+\documentclass[a4paper]{scrartcl}
+
+\usepackage[english, portuguese]{babel} %
+%\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}	%utf8 encoding
+\usepackage[colorlinks]%, %Anstatt Boxen um Links, diese einfärben
+        	{hyperref}		%Anklickbare Links
+
+\interfootnotelinepenalty=10000 % this prevents footnotes from being split across multiple pages
+%\usepackage{
+%	amsmath,                 % improves quality of formulas
+%   amssymb,                 % mathematical symbols
+%   amsfonts,                % mathematical fonts
+%   amsthm,                  % macros for theorems, lemmas, etc.
+%   graphicx,                % needed to include graphics and images
+%}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{url}
+
+\newcommand{\totype}{\(\to\;\)}
+\newcommand{\quantum}{\emph{quantum}}
+\newcommand{\segundo}{2\ensuremath{^\circ}}
+
+
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{listings}
+\lstset{ 
+    language=C, % choose the language of the code
+    basicstyle=\fontfamily{pcr}\selectfont\footnotesize\color{red},
+    keywordstyle=\color{black}\bfseries, % style for keywords
+    numbers=none, % where to put the line-numbers
+    numberstyle=\tiny, % the size of the fonts that are used for the line-numbers     
+    backgroundcolor=\color{Apricot},
+    showspaces=false, % show spaces adding particular underscores
+    showstringspaces=false, % underline spaces within strings
+    showtabs=false, % show tabs within strings adding particular underscores
+    frame=single, % adds a frame around the code
+    tabsize=2, % sets default tabsize to 2 spaces
+    rulesepcolor=\color{gray},
+    rulecolor=\color{black},
+    captionpos=b, % sets the caption-position to bottom
+    breaklines=true, % sets automatic line breaking
+    breakatwhitespace=false, 
+}
+
+\newcommand{\code}[1]{\lstinputlisting[basicstyle=\ttfamily\scriptsize,language=C]{codes/#1}}
+
+\newcommand{\Fig}[2]{
+\begin{figure}
+        \centering
+        \includegraphics[height=300pt, width=200pt, keepaspectratio=true]{images/#1.png}
+        \caption{#2}
+        \label{fig:#1}
+\end{figure}}
+
+\title{Linux - dtrace, driver de video}
+\subtitle{Projeto Fase 03}
+\author{Cassius Puodzius, Lucas Baraças, Marcelo Risse}
+\date{\segundo~Quadrimentre 2013\\\today}
+
+
+%%% START OF DOCUMENT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\end{abstract}
+
+\tableofcontents
+\pagebreak[4]
+
+\section{Introdução}
+
+O dtrace é uma modificação no kernel do Linux feita orignalmente pela Sun com o objetivo de facilitar o debugging de aplicativos, observando dados do kernel. Esta ferramenta proporciona colocar probes dentro do kernel e apresentar os resultados dependendo de certas circunstancias desejadas.
+
+Usando o dtrace pode-se monitorar as leituras e escritas em um driver, com isso, usaremos o dtrace para monitorar o driver de uma webcam a fim de observar quantos bytes são repassados da câmera por segundo.
+
+\section{Dtrace}
+
+O Dtrace foi desenvolvido pela Sun Microsystems, inicialmente para o sistema operacional Solaris10 em 2005. Desde então, a ferramenta Dtrace foi desenvolvida para funcionar em outros sistemas operacionais, como o FreeBSD, NetBSD, Mac OS X (a partir do Leopard) e em 2008 também passou a integrar o Linux. 
+A implementação Linux DTrace é um módulo de kernel carregável, dessa forma o próprio núcleo não tem de ser modificado. No entanto, uma vez que o DTrace é carregado a instância do kernel será marcada como contaminada.
+
+\subsection{Funcionalidades do Dtrace}
+
+O Dtrace é um framework de rastreamento tanto estático quanto dinâmico. O Dtrace é uma ferramenta utilizada para analisar o comportamento de programas de usuário e do próprio sistema operacional como quantidade de memória, tempo de CPU, sistemas de arquivos e recursos de rede utilizados. 
+O funcionamento do Dtrace é baseado em probes (provas), que são fired (acionadas) dependendo do que estiver ocorrendo no sistema monitorado. Com as probes é possível analisar diversos aspectos como: argumentos passados em uma função, qualquer variável global do Kernel, a data e hora que uma função foi chamada, informações da pilha, entre outros.
+
+\subsection{Arquitetura do Dtrace}
+
+\subsubsection{Dtrace Providers}
+
+Os providers tornam as probes disponíveis para o framework do Dtrace. No caso, o Dtrace envia uma informação ao provider de quando ativar a probe. O provider por sua vez, quando uma probe é acionada, transfere o controle para o Dtrace. A seguir alguns exemplos de providers:
+
+\begin{itemize}
+	\item DTrace: BEGIN, END, ERROR probes
+	\item Syscall: entry e exit para cada system call
+	\item Profile: ativa um intervalo específico de tempo (provas dinâmicas)
+	\item sysinfovminfo, fpuinfo, sched, io, iscsi, etc.: Ratreamento estático no Kernel: provas ficam em lugares específicos do sub-sistema
+	\item Pid: Rastreamento estático em programas do usuário: MySQL, Perl, Java
+	\item Pid: Rastreamento dinâmico em aplicações de usuário: pode fazer uma probe a cada instrução de um processo
+\end{itemize}
+
+\subsubsection{Dtrace probe}
+
+As probes no Dtrace tem um formato definido, com 4 atributos:
+
+\begin{itemize}
+	\item provider
+	\item module
+	\item function
+	\item name
+\end{itemize}
+
+organizados da seguinte maneira: {\textbf provider:module:function:name}.
+
+Desta forma, para cada campo que não for especificado, o Dtrace entenderá como all. Assim caso colocássemos a seguinte probe. {\tt :::}\footnote{Todos os campos em vazio.} seria o mesmo que fazer Dtrace {\tt -l}, e listará todas as probes.
+
+Uma outra especificação, é que só é necessário manter os campos vazios que estão mais a direita. ou seja, uma probe sem especificação de provider e module poderia ser apenas escrita por: {\tt function:name}, como no ex: {\tt read:entry}, ao invés de {\tt ::read:entry}. A seguir um exemplo de probe, em que são definidos apenas o provider e o nome.
+
+\code{one_syscall_entry.d}
+
+\subsubsection{Dtrace Predicates}
+
+Os predicados são expressões primárias entre barras, como no ex: {\tt /pid == \$1/}, que pode ser visto no seguinte script.
+
+\code{syscalls2.d}
+
+O predicado pode utilizar variáveis e constantes. Assim como no restante da linguagem D, 0 é falso e qualquer outro valor é verdadeiro.
+
+\subsubsection{Dtrace Actions}
+
+As ações no Dtrace tem as seguintes especificações:
+
+\begin{itemize}
+	\item Ações são feitas quando uma probe é atingida
+	\item Ações são completamente programáveis em linguagem D
+	\item A maioria das ações gravam um estado específico do sistema
+	\item Algumas ações podem mudar o estado do sistema. Essas ações são chamadas de destructive actions. Esse tipo de ação não é permitido por default.\footnote{Esse tipo de ação não será abordado neste trabalho.}
+\end{itemize}
+
+\subsection{Scripts}
+
+Segundo a estrutura de script em linguagem D apresentada anteriormente, apresentamos dois scripts como exemplo.
+
+\newpage
+
+\subsubsection{fork.d}
+
+O primeiro, chamado de \emph{fork.d}, utiliza o provider syscall e analisa as system calls fork, vfork e clone no ínicio de suas execuções. A cada system call encontrada o script imprime algumas informações do processo que chamou a system call: \emph{pid}, \emph{execname} (nome da system call), \emph{probefunc} (função da ponta de prova do DTrace).
+
+A figura \ref{fig:fase03_ss1} mostra a execução do \emph{fork.d} ao abrir uma pasta.
+
+\Fig{fase03_ss1}{Execução do fork.d ao abrir uma pasta}
+
+\code{fork.d}
+
+\subsubsection{syscalls.d}
+
+O segundo exemplo também usa o provider syscall, mas analisa todas as system calls executadas no sistema operacional. A variável {\tt @num[probefunc]} é um vetor das pontas de prova e a contagem de suas execuções, a contagem é feita pela função {\tt count()}.
+
+\code{syscalls.d}
+
+\section{Webcam no Linux}
+
+As primeiras webcams foram desenvolvidas para funcionar em portas serias, no entanto, com o advento das portas USBs, as webcams passaram a focar sua utilização nessas portas, principalmente devido à facilidade para a instalação do driver. Essas câmeras pertencem à classe de câmeras \emph{UVC} (USB Video Class) e possuem uma API específica para o Linux, que permite a implementação dos drivers das câmeras e, que em conjunto com o driver da USB, permite o \emph{plug-and-play} de câmeras no Linux.
+
+\subsection{V4L2 - API de Multimídia no Linux}\label{sec:v4l2}
+
+O V4L2 (Video for Linux Two) é uma API para multimidia no Linux que faz a interface entre a aplicação (modo usuário) e, no escopo do nosso trabalho, o driver da câmera (modo kernel). A API funciona como mostrado na Fig. \ref{fig:v4l2}, onde é possível ter uma visão geral do funcionamento do V4L2. A aplicação utiliza a API V4L2, enquanto o driver se encarrega de implementar os detalhes para o controle do hardware de vídeo. A comunicação entre a aplicação e o V4L2 é feito, basicamente, utilizando-se syscalls para I/O's de arquivos e ioclt's (I/O control). Os dispositivos V4L2 são nós do sistema de arquivos do sistema (geralmente em {\tt /dev}), que permitem a troca de informações entre a aplicação e hardware (driver) através das syscalls write e read, enquanto que as mensagens de ioclt são feitas diretamente na memória do processo (mediada pelo Linux), e permitem uma performance muito maior a custo de menores mensagens. Dessa forma, a aplicação que faz uso da câmera vai receber os dados da câmera através da syscall read e realizar os controles através da syscall ioctl. 
+
+\Fig{v4l2}{V4L2 - API para multimidia no Linux}
+
+\subsection{Aspectos dos V4L2 Drivers}
+
+O drivers implementados para a interface V4L2 devem prover algumas funcionalidades obrigatórias, como o suporte para read and write, por exemplo. A aplicação usuária deve poder controlar como o exemplo a seguir:
+
+\begin{center}
+{\tt > vidctrl /dev/video --input=0 --format=YUYV --size=352x288} \\
+{\tt > dd if=/dev/video of=myimage.422 bs=202752 count=1}
+\end{center}
+
+No exemplo acima, \emph{vidctrl} é uma aplicação fictícia (retirada de \cite{tese}) e na linha seguinte frames de imagens da webcam são lidos utilizando-se o comando \emph{dd}. Como vemos, a troca dos dados é feita mediante arquivo, nó do sistema de arquivos.
+
+\section{Dtrace - monitorando o driver da webcam}
+
+Nossa estratégia foi monitorar a leitura dos frames no V4L2. A aplicação escolhida para fazer uso da webcam foi o \emph{Cheese}, que como explicado na seção \ref{sec:v4l2}, realiza a leitura dos frames através da syscall \emph{read} em um dispositivo. Escrevemos, então, um script que monitorava o {\textbf retorno} da função read feita pelo \emph{Cheese}, pois o retorno contém o número de bytes que foram lidos efetivamente. Assim pudemos nos desviar dos detalhes de implementação do driver e monitorar o driver através da interface. A seguir apresentamos o script de monitoramento do driver da webcam, escrito pelo grupo:
+
+\code{read_cheese.d}
+
+O script funciona copiando a string lida pelo read na string {\tt self->text} e depois verificando o tamanho dessa string, mediante {\tt sizeof(...)}. É importante observar que o tamanho padrão para strings no Dtrace é de $256$B, por isso tivemos que reconfigurar esse parâmetro (escolhemos deixar $10$KB após alguns testes) usando {\tt \#pragma D option strsize=10000}. Com isso, obtivemos reads de $4058$ bytes, como mostrado na figura \ref{fig:fase03_ss2}.
+
+\Fig{fase03_ss2}{Screenshot do monitoramento do driver de video pelo Dtrace}
+
+\newpage
+
+\nocite{ref01}
+\nocite{ref02}
+\nocite{ref03}
+\nocite{ref04}
+\nocite{ref05}
+\nocite{ref06}
+
+\bibliographystyle{plain}
+\bibliography{fase03}
+
+\end{document}
+
+

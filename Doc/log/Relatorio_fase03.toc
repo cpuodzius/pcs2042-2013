@@ -1,0 +1,16 @@
+\select@language {portuguese}
+\contentsline {section}{\numberline {1}Introdu\IeC {\c c}\IeC {\~a}o}{2}{section.1}
+\contentsline {section}{\numberline {2}Dtrace}{2}{section.2}
+\contentsline {subsection}{\numberline {2.1}Funcionalidades do Dtrace}{2}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Arquitetura do Dtrace}{2}{subsection.2.2}
+\contentsline {subsubsection}{\numberline {2.2.1}Dtrace Providers}{2}{subsubsection.2.2.1}
+\contentsline {subsubsection}{\numberline {2.2.2}Dtrace probe}{3}{subsubsection.2.2.2}
+\contentsline {subsubsection}{\numberline {2.2.3}Dtrace Predicates}{3}{subsubsection.2.2.3}
+\contentsline {subsubsection}{\numberline {2.2.4}Dtrace Actions}{4}{subsubsection.2.2.4}
+\contentsline {subsection}{\numberline {2.3}Scripts}{4}{subsection.2.3}
+\contentsline {subsubsection}{\numberline {2.3.1}fork.d}{5}{subsubsection.2.3.1}
+\contentsline {subsubsection}{\numberline {2.3.2}syscalls.d}{5}{subsubsection.2.3.2}
+\contentsline {section}{\numberline {3}Webcam no Linux}{5}{section.3}
+\contentsline {subsection}{\numberline {3.1}V4L2 - API de Multim\IeC {\'\i }dia no Linux}{6}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Aspectos dos V4L2 Drivers}{6}{subsection.3.2}
+\contentsline {section}{\numberline {4}Dtrace - monitorando o driver da webcam}{7}{section.4}

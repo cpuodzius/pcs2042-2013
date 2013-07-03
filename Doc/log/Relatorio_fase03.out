@@ -1,0 +1,15 @@
+\BOOKMARK [1][-]{section.1}{Introdu\347\343o}{}% 1
+\BOOKMARK [1][-]{section.2}{Dtrace}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Funcionalidades do Dtrace}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Arquitetura do Dtrace}{section.2}% 4
+\BOOKMARK [3][-]{subsubsection.2.2.1}{Dtrace Providers}{subsection.2.2}% 5
+\BOOKMARK [3][-]{subsubsection.2.2.2}{Dtrace probe}{subsection.2.2}% 6
+\BOOKMARK [3][-]{subsubsection.2.2.3}{Dtrace Predicates}{subsection.2.2}% 7
+\BOOKMARK [3][-]{subsubsection.2.2.4}{Dtrace Actions}{subsection.2.2}% 8
+\BOOKMARK [2][-]{subsection.2.3}{Scripts}{section.2}% 9
+\BOOKMARK [3][-]{subsubsection.2.3.1}{fork.d}{subsection.2.3}% 10
+\BOOKMARK [3][-]{subsubsection.2.3.2}{syscalls.d}{subsection.2.3}% 11
+\BOOKMARK [1][-]{section.3}{Webcam no Linux}{}% 12
+\BOOKMARK [2][-]{subsection.3.1}{V4L2 - API de Multim\355dia no Linux}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.2}{Aspectos dos V4L2 Drivers}{section.3}% 14
+\BOOKMARK [1][-]{section.4}{Dtrace - monitorando o driver da webcam}{}% 15

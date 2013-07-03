@@ -1,0 +1,40 @@
+\begin{thebibliography}{1}
+
+\bibitem{ref04}
+illumos dynamic tracing guide.
+\newblock \url{http://dtrace.org/guide/preface.html}.
+
+\bibitem{ref05}
+Oracle~Corporation and/or~its affiliates.
+\newblock Dtrace user guide.
+\newblock \url{http://docs.oracle.com/cd/E19253-01/819-5488/}, 2010.
+
+\bibitem{ref03}
+dtrace.org.
+\newblock About dtrace.
+\newblock \url{http://dtrace.org/blogs/about/}.
+
+\bibitem{ref02}
+Brendan Gregg and Jim Mauro.
+\newblock Dtrace: Dynamic tracing in oracle solaris, mac os x, and freebsd.
+\newblock \url{http://www.dtracebook.com/index.php/Main_Page}, 2011.
+
+\bibitem{tese}
+Martin Rubli.
+\newblock Building a webcam infrastructure for gnu/linux.
+\newblock Master's thesis, School of Computer and Communication Sciences, Swiss
+  Federal Institute of Technology, Lausanne, Switzerland, 2006.
+
+\bibitem{ref01}
+Rickey~C. Weisner.
+\newblock Tutorial: Dtrace by example.
+\newblock
+  \url{http://www.oracle.com/technetwork/server-storage/solaris/dtrace-tutorial-142317.html},
+  2009.
+
+\bibitem{ref06}
+Colin Wheeler.
+\newblock Dtrace for cocoa developers.
+\newblock \url{http://www.viddler.com/v/4bc1e00f}, 2008.
+
+\end{thebibliography}
