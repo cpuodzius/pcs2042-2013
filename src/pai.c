@@ -17,6 +17,11 @@ int main() {
 	 *	Child process calls execve (for filho.c)
 	 */
 		char *argv[] = { "filho", NULL};
+		process = vfork();
+		if(process < 0) {	//fork error
+			perror("fork");
+			exit(EXIT_FAILURE);
+		}
 		execve("filho", argv, NULL);
 	}
 	else {
